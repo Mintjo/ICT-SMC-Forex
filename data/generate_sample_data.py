@@ -18,7 +18,9 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from strategies.silver_bullet import KILLZONES  # noqa: E402
+import strategies.silver_bullet as sb  # noqa: E402
+
+sb.set_mode("relaxed")  # this generator injects setups matching the relaxed (2h) killzone windows
 
 PIP = 0.0001
 NY_TZ = ZoneInfo("America/New_York")
@@ -103,7 +105,7 @@ def _base_random_walk(months: int, start: str, base_price: float, rng):
 
 
 def _killzone_start_utc(date, kz_name: str) -> pd.Timestamp:
-    start_h, _ = KILLZONES[kz_name]
+    start_h, _ = sb.KILLZONES[kz_name]
     start_ny = pd.Timestamp(date.year, date.month, date.day, start_h, tzinfo=NY_TZ)
     return start_ny.tz_convert("UTC")
 
@@ -234,7 +236,7 @@ def inject_microstructure(timestamps, opens, highs, lows, closes, trend_signs, r
             continue
         direction = "bullish" if trend_signs[day_idxs[0]] > 0 else "bearish"
 
-        for kz_name in KILLZONES:
+        for kz_name in sb.KILLZONES:
             if rng.random() > INJECTION_PROBABILITY:
                 continue
             kz_start_utc = _killzone_start_utc(d, kz_name)

@@ -100,6 +100,41 @@ Outputs:
 Strategy logic lives in `strategies/silver_bullet.py` and is parameterized
 (min sweep distance, min FVG size, risk:reward, etc.) at the top of the file.
 
+## Windows setup with real MT5 data
+
+`scripts/setup_windows.bat` automates the full pipeline on a Windows machine
+with a running MT5 terminal:
+
+1. checks Python is installed
+2. installs dependencies from `requirements.txt`
+3. checks the `MetaTrader5` package is installed
+4. runs `data/test_mt5_connection.py` to verify the MT5 connection
+5. runs `data/download_real_data.py` to download 30 days of real EUR/USD M5
+   data into `data/historical/EURUSD_M5_real.csv`
+6. runs `backtest/silver_bullet_backtest.py --mode strict` on that real data
+   (strict ICT thresholds: 3 pip sweep, 5 pip FVG, 1h killzones, 1
+   trade/killzone)
+7. confirms the report was generated in `results/`
+
+Copy `.env.example` to `.env` and fill in your MT5 demo credentials (e.g.
+Exness) before running it:
+
+```bash
+copy .env.example .env
+```
+
+```
+MT5_LOGIN=ton_numero_compte
+MT5_PASSWORD=ton_mot_de_passe
+MT5_SERVER=Exness-MT5Trial9
+```
+
+Then run:
+
+```bat
+scripts\setup_windows.bat
+```
+
 ## Testing
 
 ```bash

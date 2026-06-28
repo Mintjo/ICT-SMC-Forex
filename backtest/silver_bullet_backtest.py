@@ -1,4 +1,5 @@
-"""Backtest the ICT Silver Bullet strategy on synthetic EUR/USD M5 data."""
+"""Backtest the ICT Silver Bullet strategy on EUR/USD M5 data (synthetic or real)."""
+import argparse
 import json
 import sys
 from itertools import groupby
@@ -9,23 +10,17 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from strategies.silver_bullet import (
-    KILLZONES,
-    MAX_TRADES_PER_DAY,
-    Trade,
-    compute_htf_bias,
-    resample_h4,
-    run_killzone,
-)
+import strategies.silver_bullet as sb
+from strategies.silver_bullet import Trade, compute_htf_bias, resample_h4, run_killzone
 
-HISTORICAL_PATH = Path(__file__).parent.parent / "data" / "historical" / "EURUSD_M5.csv"
+DEFAULT_HISTORICAL_PATH = Path(__file__).parent.parent / "data" / "historical" / "EURUSD_M5.csv"
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 STARTING_EQUITY = 10_000.0
 RISK_PER_TRADE = 100.0  # fixed $ risk per trade (1% of starting equity)
 
 
-def load_m5() -> pd.DataFrame:
-    df = pd.read_csv(HISTORICAL_PATH, parse_dates=["timestamp"])
+def load_m5(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path, parse_dates=["timestamp"])
     df = df.set_index("timestamp").sort_index()
     return df
 
@@ -43,12 +38,12 @@ def run_backtest(m5: pd.DataFrame) -> list[Trade]:
             continue
 
         trades_today = 0
-        for kz_name in KILLZONES:
-            if trades_today >= MAX_TRADES_PER_DAY:
+        for kz_name in sb.KILLZONES:
+            if trades_today >= sb.MAX_TRADES_PER_DAY:
                 break
             kz_trades = run_killzone(m5, day_ts, kz_name, bias)
             for trade in kz_trades:
-                if trades_today >= MAX_TRADES_PER_DAY:
+                if trades_today >= sb.MAX_TRADES_PER_DAY:
                     break
                 trades.append(trade)
                 trades_today += 1
@@ -268,8 +263,24 @@ def print_summary(metrics: dict):
     print(f"Equity finale      : ${metrics['final_equity']}")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Backtest the ICT Silver Bullet strategy.")
+    parser.add_argument("--data", type=Path, default=DEFAULT_HISTORICAL_PATH, help="Path to M5 OHLCV CSV.")
+    parser.add_argument(
+        "--mode",
+        choices=["strict", "relaxed"],
+        default="strict",
+        help="strict = real ICT rules (3 pip sweep, 5 pip FVG, 1h killzones, 1 trade/killzone). "
+        "relaxed = synthetic-data validation parameters.",
+    )
+    return parser.parse_args()
+
+
 def main():
-    m5 = load_m5()
+    args = parse_args()
+    sb.set_mode(args.mode)
+
+    m5 = load_m5(args.data)
     trades = run_backtest(m5)
     df = trades_to_dataframe(trades)
     metrics = compute_metrics(trades)
@@ -278,6 +289,7 @@ def main():
     df.to_csv(RESULTS_DIR / "trades_log.csv", index=False)
     render_html_report(metrics, df, RESULTS_DIR / "backtest_report.html")
 
+    print(f"Mode: {args.mode} | Data: {args.data}")
     print_summary(metrics)
     print(f"\nRapport HTML : {RESULTS_DIR / 'backtest_report.html'}")
     print(f"Journal CSV  : {RESULTS_DIR / 'trades_log.csv'}")

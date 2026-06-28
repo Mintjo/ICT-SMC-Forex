@@ -9,16 +9,27 @@ import pandas as pd
 PIP = 0.0001
 NY_TZ = ZoneInfo("America/New_York")
 
-# Silver Bullet entry windows, in NY local time. Widened to 2h for the relaxed
-# (synthetic-data validation) parameter set; tighten back to 1h for live/strict use.
-KILLZONES = {
-    "london": (3, 5),
-    "ny_am": (9, 11),
-    "ny_pm": (13, 15),
+# Strict values are the real ICT Silver Bullet rules, used for live/real-data
+# testing. Relaxed values exist only to validate the code on synthetic data,
+# where the exact pattern conjunction is otherwise too rare to sample.
+STRICT_PARAMS = {
+    "killzones": {"london": (3, 4), "ny_am": (10, 11), "ny_pm": (14, 15)},
+    "min_sweep_pips": 3,
+    "min_fvg_pips": 5,
+    "max_trades_per_killzone": 1,
+}
+RELAXED_PARAMS = {
+    "killzones": {"london": (3, 5), "ny_am": (9, 11), "ny_pm": (13, 15)},
+    "min_sweep_pips": 1.5,
+    "min_fvg_pips": 2.5,
+    "max_trades_per_killzone": 2,
 }
 
-MIN_SWEEP_PIPS = 1.5
-MIN_FVG_PIPS = 2.5
+KILLZONES = STRICT_PARAMS["killzones"]
+MIN_SWEEP_PIPS = STRICT_PARAMS["min_sweep_pips"]
+MIN_FVG_PIPS = STRICT_PARAMS["min_fvg_pips"]
+MAX_TRADES_PER_KILLZONE = STRICT_PARAMS["max_trades_per_killzone"]
+
 SL_BUFFER_PIPS = 2
 RISK_REWARD = 2.0
 LOOKBACK_BARS = 48          # 4h of M5 bars used to find the swept liquidity level
@@ -27,7 +38,16 @@ FVG_SEARCH_BARS = 12        # bars to search for the first FVG after MSS
 ENTRY_WAIT_BARS = 12        # bars to wait for price to retrace into the FVG
 MAX_HOLD_BARS = 48          # 4h max trade duration before timing out
 MAX_TRADES_PER_DAY = 2
-MAX_TRADES_PER_KILLZONE = 2
+
+
+def set_mode(mode: str = "strict") -> None:
+    """Switch between "strict" (real ICT rules) and "relaxed" (synthetic validation) parameters."""
+    global KILLZONES, MIN_SWEEP_PIPS, MIN_FVG_PIPS, MAX_TRADES_PER_KILLZONE
+    params = STRICT_PARAMS if mode == "strict" else RELAXED_PARAMS
+    KILLZONES = params["killzones"]
+    MIN_SWEEP_PIPS = params["min_sweep_pips"]
+    MIN_FVG_PIPS = params["min_fvg_pips"]
+    MAX_TRADES_PER_KILLZONE = params["max_trades_per_killzone"]
 
 
 def to_ny(ts: pd.Timestamp) -> pd.Timestamp:
