@@ -64,6 +64,34 @@ python data/mt5_connector.py
 It polls continuously, writing CSVs to `data/live/` and logging the active
 killzone and reconnect attempts.
 
+## Silver Bullet backtester
+
+Since `yfinance` is blocked by the network proxy in this environment,
+`data/generate_sample_data.py` generates 6 months of synthetic but realistic
+EUR/USD M5 data (alternating trend segments, ~10-15 pip ATR, session-dependent
+spread, weekend gaps):
+
+```bash
+python data/generate_sample_data.py
+```
+
+`backtest/silver_bullet_backtest.py` then runs the full ICT Silver Bullet
+pipeline (killzone filter → H4 bias → BSL/SSL sweep → MSS/CHoCH → first FVG →
+50%-retracement entry, 1:2 R:R, max 2 trades/day) over that data:
+
+```bash
+python backtest/silver_bullet_backtest.py
+```
+
+Outputs:
+- `results/backtest_report.html` — visual report (equity curve, monthly
+  distribution, win/loss by killzone, last 20 trades)
+- `results/trades_log.csv` — full trade log
+- console summary (win rate, profit factor, max drawdown, Sharpe ratio, etc.)
+
+Strategy logic lives in `strategies/silver_bullet.py` and is parameterized
+(min sweep distance, min FVG size, risk:reward, etc.) at the top of the file.
+
 ## Testing
 
 ```bash
