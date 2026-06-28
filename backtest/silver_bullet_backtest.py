@@ -46,8 +46,10 @@ def run_backtest(m5: pd.DataFrame) -> list[Trade]:
         for kz_name in KILLZONES:
             if trades_today >= MAX_TRADES_PER_DAY:
                 break
-            trade = run_killzone(m5, day_ts, kz_name, bias)
-            if trade is not None:
+            kz_trades = run_killzone(m5, day_ts, kz_name, bias)
+            for trade in kz_trades:
+                if trades_today >= MAX_TRADES_PER_DAY:
+                    break
                 trades.append(trade)
                 trades_today += 1
 

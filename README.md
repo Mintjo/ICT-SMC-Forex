@@ -67,9 +67,12 @@ killzone and reconnect attempts.
 ## Silver Bullet backtester
 
 Since `yfinance` is blocked by the network proxy in this environment,
-`data/generate_sample_data.py` generates 6 months of synthetic but realistic
-EUR/USD M5 data (alternating trend segments, ~10-15 pip ATR, session-dependent
-spread, weekend gaps):
+`data/generate_sample_data.py` generates 12 months of synthetic but realistic
+EUR/USD M5 data: alternating trend segments, ~15 pip ATR, session-dependent
+spread, weekend gaps, and a deliberate ICT microstructure injected into each
+killzone window (liquidity sweep of the prior session's high/low, a brief
+fake breakout, MSS/CHoCH, and an impulsive FVG) so the strategy has enough
+valid setups to produce a statistically meaningful sample:
 
 ```bash
 python data/generate_sample_data.py
@@ -77,7 +80,12 @@ python data/generate_sample_data.py
 
 `backtest/silver_bullet_backtest.py` then runs the full ICT Silver Bullet
 pipeline (killzone filter → H4 bias → BSL/SSL sweep → MSS/CHoCH → first FVG →
-50%-retracement entry, 1:2 R:R, max 2 trades/day) over that data:
+50%-retracement entry, 1:2 R:R, max 2 trades/day) over that data. The current
+thresholds in `strategies/silver_bullet.py` are intentionally relaxed for
+synthetic-data validation (sweep ≥1.5 pips, FVG ≥2.5 pips, 2h killzone
+windows, up to 2 trades/killzone, neutral H4 bias trades both directions) —
+tighten them back to the strict ICT values (3 pips, 5 pips, 1h windows, 1
+trade/killzone, skip on neutral bias) before trading live MT5 data:
 
 ```bash
 python backtest/silver_bullet_backtest.py
