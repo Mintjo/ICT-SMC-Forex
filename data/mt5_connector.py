@@ -55,6 +55,24 @@ def get_active_killzone(now: datetime | None = None) -> str | None:
     return None
 
 
+def detect_symbol(base: str = "EURUSD") -> str:
+    """Detect the broker-specific symbol name for `base` (e.g. Exness appends
+    a suffix like "m": "EURUSDm"). Tries the bare name first, then common
+    broker suffixes, and falls back to scanning all broker symbols for one
+    that starts with `base`."""
+    candidates = [base, f"{base}m", f"{base}.m", f"{base}_m", f"{base}.a", f"{base}#"]
+    for candidate in candidates:
+        if mt5.symbol_info(candidate) is not None:
+            return candidate
+
+    all_symbols = mt5.symbols_get() or []
+    for sym in all_symbols:
+        if sym.name.upper().startswith(base.upper()):
+            return sym.name
+
+    raise RuntimeError(f"No broker symbol found matching base '{base}'")
+
+
 def killzone_status_wat() -> dict:
     """Return killzone status with both NY and WAT (Cotonou) local times, for logging/display."""
     now_wat = datetime.now(tz=WAT_TZ)
@@ -144,6 +162,7 @@ class MT5Connector:
 
     def update_all(self, symbol: str = "EURUSD", timeframes=("M5", "M15", "H1", "H4"), count: int = 500):
         """Fetch and persist OHLCV data for each requested timeframe."""
+        symbol = detect_symbol(symbol)
         for tf in timeframes:
             df = self.fetch_ohlcv(symbol, tf, count=count)
             path = self.save_ohlcv(df, symbol, tf)
@@ -156,6 +175,7 @@ class MT5Connector:
     def run_forever(self, symbol: str = "EURUSD", timeframes=("M5", "M15", "H1", "H4"),
                      poll_seconds: int = 30):
         """Continuously poll MT5 for fresh OHLCV data, logging killzone status, with auto-reconnect."""
+        symbol = detect_symbol(symbol)
         logger.info("Starting live feed loop for %s", symbol)
         while True:
             try:

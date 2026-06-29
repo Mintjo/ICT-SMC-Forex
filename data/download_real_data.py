@@ -16,7 +16,7 @@ try:
 except ImportError:
     pass
 
-from data.mt5_connector import MT5Connector, mt5
+from data.mt5_connector import MT5Connector, detect_symbol, mt5
 
 OUT_PATH = Path(__file__).parent / "historical" / "EURUSD_M5_real.csv"
 
@@ -26,6 +26,7 @@ def download(symbol: str, days: int) -> Path:
     if not connector.connect(retries=3):
         raise ConnectionError("Could not connect to MT5 terminal")
 
+    symbol = detect_symbol(symbol)
     bars_needed = days * 24 * 12  # M5 bars/day (24h market, FX trades ~5 days/week but oversample is fine)
     df = connector.fetch_ohlcv(symbol, "M5", count=bars_needed)
     connector.shutdown()
