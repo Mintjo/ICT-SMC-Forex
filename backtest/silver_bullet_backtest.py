@@ -22,6 +22,9 @@ RISK_PER_TRADE = 100.0  # fixed $ risk per trade (1% of starting equity)
 def load_m5(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path, parse_dates=["timestamp"])
     df = df.set_index("timestamp").sort_index()
+    # Les exports MT5 live sont en UTC sans fuseau ; les killzones sont en UTC avec fuseau.
+    if df.index.tz is None:
+        df.index = df.index.tz_localize("UTC")
     return df
 
 

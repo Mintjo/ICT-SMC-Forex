@@ -1,0 +1,30 @@
+{
+  "as_of_utc": "2026-06-29T08:40:00+00:00",
+  "as_of_cotonou": "2026-06-29 09:40 (Cotonou)",
+  "day": "2026-06-29",
+  "mode": "strict",
+  "htf_bias": "bullish",
+  "bsl": 1.14146,
+  "ssl": 1.13806,
+  "h1_bsl": 1.13929,
+  "h1_ssl": 1.13806,
+  "m15_bsl": 1.13899,
+  "m15_ssl": 1.13806,
+  "london_window": [
+    "2026-06-29 08:00 (Cotonou)",
+    "2026-06-29 09:00 (Cotonou)"
+  ],
+  "london_bars": 12,
+  "sweeps": [],
+  "active_fvgs": [],
+  "last_close": 1.1399,
+  "ny_am_window": [
+    "2026-06-29 15:00 (Cotonou)",
+    "2026-06-29 16:00 (Cotonou)"
+  ],
+  "ny_am_have_data": false,
+  "ny_am_direction": "LONG (buy)",
+  "ny_am_swept_ssl": false,
+  "ny_am_swept_bsl": false,
+  "ny_am_aligned_fvgs": []
+}
